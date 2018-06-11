@@ -1,0 +1,166 @@
+<!--The content below is only a placeholder and can be replaced.-->
+<div class="container">
+  <div class="column">
+    <mat-card style="overflow: auto">
+      <table>
+        <tbody>
+        <tr>
+          <td>
+            <mat-form-field>
+              <input matInput placeholder="Rows" type="number" min="0" [formControl]="rowsControl" required>
+            </mat-form-field>
+          </td>
+          <td>
+            <mat-form-field>
+              <input matInput placeholder="Columns" type="number" min="0" [formControl]="columnsControl" required>
+            </mat-form-field>
+          </td>
+          <td>
+            <div *ngIf="!ship" [matTooltip]="currentUsedPercentage < 50 ? 'Het schip moet 50% belast zijn' : ''" matTooltipPosition="left">
+              <button (click)="calculate()" mat-raised-button color="primary" [disabled]="currentUsedPercentage < 50">calculate {{currentUsedPercentage.toFixed(2)}}%</button>
+            </div>
+            <div *ngIf="ship">
+              <button (click)="reset()" mat-raised-button color="primary">reset</button>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <table>
+              <tbody>
+              <tr>
+                <td>
+                  <mat-slider #ton style="width: 100%" min="4" max="30" step="1" thumbLabel="true"></mat-slider>
+                </td>
+                <td>
+                  {{ton.value}} TON
+                </td>
+              </tr>
+              </tbody>
+            </table>
+          </td>
+          <td>
+            <mat-form-field>
+              <mat-select #containerOptions placeholder="Type container">
+                <mat-option value="valuable">Waardevol</mat-option>
+                <mat-option value="cooled">Gekoeld</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </td>
+          <td>
+            <button [disabled]="ship" mat-raised-button (click)="addContainer()" color="primary">add</button>
+            <button [disabled]="ship" mat-raised-button (click)="random()" color="primary"><mat-icon>shuffle</mat-icon></button>
+          </td>
+        </tr>
+        <tr>
+          <th>ID</th>
+          <th>Gewicht</th>
+          <th>Opties</th>
+        </tr>
+
+        <tr class="ship-row" *ngFor="let container of pendingContainers">
+          <td>{{container.id}}</td>
+          <td>{{container.weight / 1000}} TON</td>
+          <td>
+            <ul>
+              <li *ngIf="container.cooled">Gekoeld</li>
+              <li *ngIf="container.valuable">Waardevol</li>
+            </ul>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </mat-card>
+  </div>
+  <div class="column">
+    <div style="position: absolute;top: 0; width: 100%;">
+      <h5>Level: {{level}}  {{ ship ? 'gewicht verschil in percentage '+ship.differencePercentage+'%' : ''}}</h5>
+      <div class="legend">
+        <div class="legend-item">
+          <div class="td normal"></div>
+          <label>container</label>
+        </div>
+        <div class="legend-item">
+          <div class="td cooled"></div>
+          <label>gekoeld</label>
+        </div>
+        <div class="legend-item">
+          <div class="td valuable"></div>
+          <label>waardevol</label>
+        </div>
+      </div>
+      <div class="switch3d">
+        <mat-slide-toggle [(ngModel)]="view3d">
+          3D
+        </mat-slide-toggle>
+      </div>
+    </div>
+    <ng-container *ngIf="view3d">
+      <ng-container *ngFor="let l of intToArray((ship || {maxLevel: 1}).maxLevel); let li = index">
+        <div [ngStyle]="ShipView(li)" [class.capsize]="!ship && currentUsedPercentage < 50" class="ship">
+          <div class="tr" *ngFor="let r of intToArray(rows); let ri = index">
+            <div class="td" *ngFor="let c of intToArray(columns); let ci = index">
+              <div *ngIf="getContainer(ri, ci, li);let container" class="normal" [class.cooled]="container.cooled" [class.valuable]="container.valuable">
+                {{container.id}}
+              </div>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+    </ng-container>
+    <ng-container *ngIf="!view3d">
+      <div [class.capsize]="!ship && currentUsedPercentage < 50" class="ship">
+        <div class="tr" *ngFor="let r of intToArray(rows); let ri = index">
+          <div class="td" *ngFor="let c of intToArray(columns); let ci = index">
+            <div *ngIf="getContainer(ri, ci, level-1);let container" class="normal" [class.cooled]="container.cooled" [class.valuable]="container.valuable">
+              {{container.id}}
+            </div>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+    <div class="controls">
+      <table>
+        <tbody>
+          <tr>
+            <td>
+              <mat-slider #x [value]="45" min="45" max="90" step="1" thumbLabel="true"></mat-slider>
+            </td>
+            <td>
+              X: <input type="number" [(ngModel)]="x.value" min="45" max="90"/>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <mat-slider #z [value]="45" min="0" max="360" step="1" thumbLabel="true"></mat-slider>
+            </td>
+            <td>
+              Z: <input type="number" [(ngModel)]="z.value" min="0" max="360"/>
+            </td>
+          </tr>
+          <tr *ngIf="ship">
+            <td>
+              <table style="width: 100%;">
+                <tbody>
+                  <tr>
+                    <td>
+                      <button color="primary" (click)="levelDown()" mat-raised-button><mat-icon>arrow_downward</mat-icon></button>
+                    </td>
+                    <td>
+                      level: {{level}}
+                    </td>
+                    <td>
+                      <button color="primary" (click)="levelUp()" mat-raised-button><mat-icon>arrow_upward</mat-icon></button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+
